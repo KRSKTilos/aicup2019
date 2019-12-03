@@ -1,27 +1,41 @@
 import model.*;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MyStrategy {
-  private static int MIN_DISTANCE_TO_ENEMY = 2;
-  private static int USER_VELOCITY_MULTIPLY = 3;
+  private static int MIN_DISTANCE_TO_ENEMY = 1;
   private static int MIN_HEALTH_PERCENT = 50;
+  private boolean findGoodWeapon = false;
+  private boolean swapWeapon = false;
+  private boolean goodWeapon = false;
   private LootBox dest = null;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
+    swapWeapon = false;
     /* loot box pickup */
     if (dest != null) {
-      boolean contains = false;
-      for (LootBox lootBox : game.getLootBoxes()) {
-        if (lootBox.equals(dest)) {
-          contains = true;
-          break;
+      if (findGoodWeapon) {
+        double deltaX = dest.getPosition().getX() - unit.getPosition().getX();
+        double deltaY = dest.getPosition().getY() - unit.getPosition().getY();
+        /* todo: boxsize */
+        if (Math.abs(deltaX) <= 0.5 && Math.abs(deltaY) <= 0.5) {
+          debug.draw(new CustomData.Log("BINGO! Normal Weapon!"));
+          findGoodWeapon = false;
+          swapWeapon = true;
+          dest = null;
+          goodWeapon = true;
         }
-      }
-      if (!contains) {
-        dest = null;
+      } else {
+        boolean contains = false;
+        for (LootBox lootBox : game.getLootBoxes()) {
+          if (lootBox.equals(dest)) {
+            contains = true;
+            break;
+          }
+        }
+        if (!contains) {
+          dest = null;
+        }
       }
     }
 
@@ -34,7 +48,7 @@ public class MyStrategy {
 
     int userHealthPercent = game.getProperties().getUnitMaxHealth() / 100 * unit.getHealth();
     if (userHealthPercent < MIN_HEALTH_PERCENT) {
-      debug.draw(new CustomData.Log("LOH HP"));
+      debug.draw(new CustomData.Log("LOW HP"));
       if (dest==null || dest.getItem() instanceof Item.HealthPack) {
         Map<LootBox, Double> packs = new HashMap<>();
         for (LootBox lootBox : game.getLootBoxes()) {
@@ -54,15 +68,11 @@ public class MyStrategy {
     }
 
     if (dest==null && unit.getWeapon()==null) {
-      /* find weapon */
-      for (LootBox lootBox : game.getLootBoxes()) {
-        if (lootBox.getItem() instanceof Item.Weapon) {
-          if (dest == null || distanceSqr(unit.getPosition(),
-                  lootBox.getPosition()) < distanceSqr(unit.getPosition(), dest.getPosition())) {
-            dest = lootBox;
-          }
-        }
-      }
+      findNearWeapon(unit, game);
+    }
+
+    if (dest==null && unit.getWeapon()!=null) {
+      findGoodWeapon(unit, game);
     }
 
     Vec2Double targetPos = unit.getPosition();
@@ -98,7 +108,7 @@ public class MyStrategy {
       for (int i=0; i<tilesToEnemyX; i++) {
         Vec2Double point = pointAtVectorOnDistance(unit.getPosition(), enemy.getPosition(), i);
         Tile tile = game.getLevel().getTiles()[(int) point.getX()][(int) point.getY()];
-        if (tile.equals(Tile.WALL) || tile.equals(Tile.PLATFORM)) {
+        if (tile.equals(Tile.WALL)) {
           enemySpotted = false;
           break;
         }
@@ -118,15 +128,89 @@ public class MyStrategy {
       }
     }
 
+    if (enemySpotted) {
+      if (!enemy.getJumpState().isCanCancel() && enemy.getJumpState().getSpeed()<=0) {
+        double delta = game.getProperties().getUnitFallSpeed()/game.getProperties().getUpdatesPerTick();
+        aim.setY(aim.getY()-delta);
+      }
+    }
+
+    if (enemySpotted && dest==null) {
+      for (Bullet bullet : game.getBullets()) {
+        if (bullet.getPlayerId() != unit.getPlayerId()) {
+          /* jump from bullet */
+        }
+      }
+    }
+
     UnitAction action = new UnitAction();
-    action.setVelocity((targetPos.getX() - unit.getPosition().getX())*USER_VELOCITY_MULTIPLY);
+    if (swapWeapon) {
+      action.setVelocity(0);
+    } else {
+      action.setVelocity((targetPos.getX() - unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed());
+    }
     action.setJump(jump);
     action.setJumpDown(!jump);
     action.setAim(aim);
     action.setShoot(enemySpotted);
-    action.setSwapWeapon(false);
+    action.setSwapWeapon(swapWeapon);
     action.setPlantMine(false);
     return action;
+  }
+
+  private void findGoodWeapon(Unit unit, Game game) {
+    if (goodWeapon)
+      return;
+
+    Set<WeaponType> weaponTypes = new HashSet<>();
+    Map<LootBox, Double> weaponBoxes = new HashMap<>();
+    for (LootBox lootBox : game.getLootBoxes()) {
+      if (lootBox.getItem() instanceof Item.Weapon) {
+        double distance = distanceSqr(unit.getPosition(), lootBox.getPosition());
+        if (weaponBoxes.containsKey(lootBox)) {
+          if (weaponBoxes.get(lootBox) > distance) {
+            weaponBoxes.put(lootBox, distance);
+          }
+        } else weaponBoxes.put(lootBox, distance);
+        weaponTypes.add(((Item.Weapon) lootBox.getItem()).getWeaponType());
+      }
+    }
+
+    LinkedHashMap<LootBox, Double> sortedMap = new LinkedHashMap<>();
+    weaponBoxes.entrySet().stream()
+            .sorted(Map.Entry.comparingByValue())
+            .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+
+    WeaponType findType = null;
+    if (weaponTypes.contains(WeaponType.ASSAULT_RIFLE)) {
+      findType = WeaponType.ASSAULT_RIFLE;
+    } else if (weaponTypes.contains(WeaponType.PISTOL)) {
+      findType = WeaponType.PISTOL;
+    }
+
+    if (findType != null) {
+      Iterator<Map.Entry<LootBox, Double>> lootBoxIterator = sortedMap.entrySet().iterator();
+      while (lootBoxIterator.hasNext()) {
+        LootBox lootBox = lootBoxIterator.next().getKey();
+        Item.Weapon weapon = (Item.Weapon) lootBox.getItem();
+        if (weapon.getWeaponType().equals(findType)) {
+          findGoodWeapon = true;
+          dest = lootBox;
+          break;
+        }
+      }
+    }
+  }
+
+  private void findNearWeapon(Unit unit, Game game) {
+    for (LootBox lootBox : game.getLootBoxes()) {
+      if (lootBox.getItem() instanceof Item.Weapon) {
+        if (dest == null || distanceSqr(unit.getPosition(),
+                lootBox.getPosition()) < distanceSqr(unit.getPosition(), dest.getPosition())) {
+          dest = lootBox;
+        }
+      }
+    }
   }
 
   static double distanceSqr(Vec2Double a, Vec2Double b) {
