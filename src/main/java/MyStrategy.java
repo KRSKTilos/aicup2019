@@ -4,14 +4,20 @@ import java.util.*;
 
 public class MyStrategy {
   private static int MIN_DISTANCE_TO_ENEMY = 1;
-  private static int MIN_HEALTH_PERCENT = 50;
+  private static int MIN_HEALTH_PERCENT = 45;
+  private int rocketLauncherDamage = 0;
   private boolean findGoodWeapon = false;
-  private boolean swapWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
-    swapWeapon = false;
+    if (rocketLauncherDamage <= 0) {
+      rocketLauncherDamage = game.getProperties().getWeaponParams()
+              .get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage();
+      System.out.println("ROCKET_DAMAGE: " + rocketLauncherDamage);
+    }
+
+    boolean swapWeapon = false;
     /* loot box pickup */
     if (dest != null) {
       if (findGoodWeapon) {
@@ -48,22 +54,13 @@ public class MyStrategy {
 
     int userHealthPercent = game.getProperties().getUnitMaxHealth() / 100 * unit.getHealth();
     if (userHealthPercent < MIN_HEALTH_PERCENT) {
-      debug.draw(new CustomData.Log("LOW HP"));
-      if (dest==null || dest.getItem() instanceof Item.HealthPack) {
-        Map<LootBox, Double> packs = new HashMap<>();
-        for (LootBox lootBox : game.getLootBoxes()) {
-          if (lootBox.getItem() instanceof Item.HealthPack) {
-            packs.put(lootBox, distanceSqr(unit.getPosition(), lootBox.getPosition()));
-          }
-        }
-        if (!packs.isEmpty()) {
-          LinkedHashMap<LootBox, Double> sortedMap = new LinkedHashMap<>();
-          packs.entrySet().stream()
-                  .sorted(Map.Entry.comparingByValue())
-                  .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
-          LootBox nearPack = sortedMap.entrySet().iterator().next().getKey();
-          dest = nearPack;
-        }
+      debug.draw(new CustomData.Log("LOW HP! LESS THAN " + MIN_HEALTH_PERCENT));
+      findHealthPack(unit, game);
+    } else if (enemy!=null && enemy.getWeapon()!=null) {
+      if (enemy.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)
+              && unit.getHealth() <= rocketLauncherDamage) {
+        debug.draw(new CustomData.Log("LOW HP! ROCKET LAUNCHER PANIC!"));
+        findHealthPack(unit, game);
       }
     }
 
@@ -156,6 +153,25 @@ public class MyStrategy {
     action.setSwapWeapon(swapWeapon);
     action.setPlantMine(false);
     return action;
+  }
+
+  private void findHealthPack(Unit unit, Game game) {
+    if (dest==null || dest.getItem() instanceof Item.HealthPack) {
+      Map<LootBox, Double> packs = new HashMap<>();
+      for (LootBox lootBox : game.getLootBoxes()) {
+        if (lootBox.getItem() instanceof Item.HealthPack) {
+          packs.put(lootBox, distanceSqr(unit.getPosition(), lootBox.getPosition()));
+        }
+      }
+      if (!packs.isEmpty()) {
+        LinkedHashMap<LootBox, Double> sortedMap = new LinkedHashMap<>();
+        packs.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+        LootBox nearPack = sortedMap.entrySet().iterator().next().getKey();
+        dest = nearPack;
+      }
+    }
   }
 
   private void findGoodWeapon(Unit unit, Game game) {
