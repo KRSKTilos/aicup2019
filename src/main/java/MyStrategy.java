@@ -5,11 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MyStrategy {
+  private static int USER_VELOCITY_MULTIPLY = 3;
   private static int MIN_HEALTH_PERCENT = 50;
   private LootBox dest = null;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
-    /* Лутбокс подобран */
+    /* loot box pickup */
     if (dest != null) {
       boolean contains = false;
       for (LootBox lootBox : game.getLootBoxes()) {
@@ -22,7 +23,6 @@ public class MyStrategy {
         dest = null;
       }
     }
-
 
     Unit enemy = null;
     for (Unit other : game.getUnits()) {
@@ -52,13 +52,14 @@ public class MyStrategy {
       }
     }
 
-
-    LootBox nearestWeapon = null;
-    for (LootBox lootBox : game.getLootBoxes()) {
-      if (lootBox.getItem() instanceof Item.Weapon) {
-        if (nearestWeapon == null || distanceSqr(unit.getPosition(),
-            lootBox.getPosition()) < distanceSqr(unit.getPosition(), nearestWeapon.getPosition())) {
-          nearestWeapon = lootBox;
+    if (dest==null && unit.getWeapon()==null) {
+      /* find weapon */
+      for (LootBox lootBox : game.getLootBoxes()) {
+        if (lootBox.getItem() instanceof Item.Weapon) {
+          if (dest == null || distanceSqr(unit.getPosition(),
+                  lootBox.getPosition()) < distanceSqr(unit.getPosition(), dest.getPosition())) {
+            dest = lootBox;
+          }
         }
       }
     }
@@ -68,12 +69,8 @@ public class MyStrategy {
       targetPos = dest.getPosition();
     }
 
-    if (dest == null) {
-      if (unit.getWeapon() == null && nearestWeapon != null) {
-        targetPos = nearestWeapon.getPosition();
-      } else if (enemy != null) {
-        targetPos = enemy.getPosition();
-      }
+    if (dest==null && enemy!=null) {
+      targetPos = enemy.getPosition();
     }
 
     Vec2Double aim = new Vec2Double(0, 0);
@@ -93,12 +90,27 @@ public class MyStrategy {
       jump = true;
     }
 
+    boolean enemySpotted = true;
+    int tilesToEnemyX = (int) Math.abs(unit.getPosition().getX()-enemy.getPosition().getX());
+    if (tilesToEnemyX > 0) {
+      /* check blind tiles */
+      for (int i=0; i<tilesToEnemyX; i++) {
+        Vec2Double point = pointAtVectorOnDistance(unit.getPosition(), enemy.getPosition(), i);
+        Tile tile = game.getLevel().getTiles()[(int) point.getX()][(int) point.getY()];
+        if (tile.equals(Tile.WALL) || tile.equals(Tile.PLATFORM)) {
+          enemySpotted = false;
+          break;
+        }
+      }
+    }
+
+
     UnitAction action = new UnitAction();
-    action.setVelocity(targetPos.getX() - unit.getPosition().getX());
+    action.setVelocity((targetPos.getX() - unit.getPosition().getX())*USER_VELOCITY_MULTIPLY);
     action.setJump(jump);
     action.setJumpDown(!jump);
     action.setAim(aim);
-    action.setShoot(true);
+    action.setShoot(enemySpotted);
     action.setSwapWeapon(false);
     action.setPlantMine(false);
     return action;
@@ -106,5 +118,13 @@ public class MyStrategy {
 
   static double distanceSqr(Vec2Double a, Vec2Double b) {
     return (a.getX() - b.getX()) * (a.getX() - b.getX()) + (a.getY() - b.getY()) * (a.getY() - b.getY());
+  }
+
+  static Vec2Double pointAtVectorOnDistance(Vec2Double a, Vec2Double b, double rac) {
+    double rab = Math.sqrt(Math.pow(b.getX() - a.getX(), 2) + Math.pow(b.getY() - a.getY(), 2));
+    double k = rac / rab;
+    double x = a.getX() + (b.getX()-a.getX())*k;
+    double y = a.getY() + (b.getY()-a.getY())*k;
+    return new Vec2Double(x, y);
   }
 }
