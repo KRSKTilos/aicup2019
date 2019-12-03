@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MyStrategy {
+  private static int MIN_DISTANCE_TO_ENEMY = 2;
   private static int USER_VELOCITY_MULTIPLY = 3;
   private static int MIN_HEALTH_PERCENT = 50;
   private LootBox dest = null;
@@ -104,6 +105,18 @@ public class MyStrategy {
       }
     }
 
+    if (dest==null && unit.getWeapon()!=null) {
+      /* safe distance */
+      double minDistance = MIN_DISTANCE_TO_ENEMY;
+      if (unit.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)) {
+        minDistance = unit.getWeapon().getParams().getExplosion().getRadius()*2;
+      }
+      if (unit.getPosition().getX() > targetPos.getX()) {
+        targetPos.setX(targetPos.getX()+minDistance);
+      } else {
+        targetPos.setX(targetPos.getX()-minDistance);
+      }
+    }
 
     UnitAction action = new UnitAction();
     action.setVelocity((targetPos.getX() - unit.getPosition().getX())*USER_VELOCITY_MULTIPLY);
