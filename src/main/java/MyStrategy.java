@@ -5,18 +5,14 @@ import java.util.*;
 public class MyStrategy {
   private static int MIN_DISTANCE_TO_ENEMY = 1;
   private static int MIN_HEALTH_PERCENT = 45;
-  private int rocketLauncherDamage = 0;
   private boolean findGoodWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
-  private int fleeJump = 0;
+  private Vec2Double lastPosition = new Vec2Double(0,0);
+  private Tile lastTile = Tile.EMPTY;
+  private boolean needStand = false;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
-    if (rocketLauncherDamage <= 0) {
-      rocketLauncherDamage = game.getProperties().getWeaponParams()
-              .get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage();
-      System.out.println("ROCKET_DAMAGE: " + rocketLauncherDamage);
-    }
 
     boolean swapWeapon = false;
     /* loot box pickup */
@@ -59,7 +55,8 @@ public class MyStrategy {
       findHealthPack(unit, game);
     } else if (enemy!=null && enemy.getWeapon()!=null) {
       if (enemy.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)
-              && unit.getHealth() <= rocketLauncherDamage) {
+              && unit.getHealth() <= game.getProperties().getWeaponParams()
+              .get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage()) {
         debug.draw(new CustomData.Log("LOW HP! ROCKET LAUNCHER PANIC!"));
         findHealthPack(unit, game);
       }
@@ -84,27 +81,49 @@ public class MyStrategy {
 
     Vec2Double aim = new Vec2Double(0, 0);
     if (enemy != null) {
-      aim = new Vec2Double(enemy.getPosition().getX() - unit.getPosition().getX(),
-              enemy.getPosition().getY() - unit.getPosition().getY());
+      aim = new Vec2Double(
+              enemy.getPosition().getX() - unit.getPosition().getX(),
+              enemy.getPosition().getY() - unit.getPosition().getY()
+      );
     }
 
     boolean jump = targetPos.getY() > unit.getPosition().getY();
-    if (targetPos.getX() > unit.getPosition().getX() && game.getLevel()
-        .getTiles()[(int) (unit.getPosition().getX() + 1)][(int) (unit.getPosition().getY())] == Tile.WALL) {
-      jump = true;
+    if (targetPos.getX() >= unit.getPosition().getX()) {
+      int x = (int) unit.getPosition().getX();
+      int y = (int) unit.getPosition().getY();
+      Tile rightTile = game.getLevel().getTiles()[x+1][y];
+      Tile currentTile = game.getLevel().getTiles()[x][y];
+      if (rightTile.equals(Tile.WALL)) {
+        jump = true;
+        int lastX = (int) lastPosition.getX();
+        int lastY = (int) lastPosition.getY();
+        if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
+          needStand = true;
+        }
+      }
     }
 
-    if (targetPos.getX() < unit.getPosition().getX() && game.getLevel()
-        .getTiles()[(int) (unit.getPosition().getX() - 1)][(int) (unit.getPosition().getY())] == Tile.WALL) {
-      jump = true;
+    if (targetPos.getX() <= unit.getPosition().getX()) {
+      int x = (int) unit.getPosition().getX();
+      int y = (int) unit.getPosition().getY();
+      Tile leftTile = game.getLevel().getTiles()[x-1][y];
+      Tile currentTile = game.getLevel().getTiles()[x][y];
+      if (leftTile.equals(Tile.WALL)) {
+        jump = true;
+        int lastX = (int) lastPosition.getX();
+        int lastY = (int) lastPosition.getY();
+        if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
+          needStand = true;
+        }
+      }
     }
 
     boolean enemySpotted = true;
     int tilesToEnemyX = (int) Math.abs(unit.getPosition().getX()-enemy.getPosition().getX());
     if (tilesToEnemyX > 0) {
       /* check blind tiles */
-      for (int i=0; i<tilesToEnemyX; i++) {
-        Vec2Double point = pointAtVectorOnDistance(unit.getPosition(), enemy.getPosition(), i);
+      for (int tileIndex=0; tileIndex<tilesToEnemyX; tileIndex++) {
+        Vec2Double point = pointAtVectorOnDistance(unit.getPosition(), enemy.getPosition(), tileIndex);
         Tile tile = game.getLevel().getTiles()[(int) point.getX()][(int) point.getY()];
         if (tile.equals(Tile.WALL)) {
           enemySpotted = false;
@@ -123,13 +142,6 @@ public class MyStrategy {
         targetPos.setX(targetPos.getX()+minDistance);
       } else {
         targetPos.setX(targetPos.getX()-minDistance);
-      }
-    }
-
-    if (enemySpotted) {
-      if (!enemy.getJumpState().isCanCancel() && enemy.getJumpState().getSpeed()<=0) {
-        double delta = game.getProperties().getUnitFallSpeed()/game.getProperties().getUpdatesPerTick();
-        aim.setY(aim.getY()-delta);
       }
     }
 
@@ -179,17 +191,30 @@ public class MyStrategy {
 
     boolean reload = unit.getWeapon()!=null && unit.getWeapon().getMagazine()==0;
 
-    if (fleeJump > 0) {
-      fleeJump--;
+    int x = (int) unit.getPosition().getX();
+    int y = (int) unit.getPosition().getY();
+    Tile tile = game.getLevel().getTiles()[x][y];
+
+    if (needStand) {
+      if (unit.getJumpState().isCanCancel()) {
+        if (tile.equals(Tile.EMPTY) && lastTile.equals(Tile.EMPTY)) {
+          jump = false;
+        }
+      } else {
+        needStand = false;
+      }
     }
 
-    action.setJump(jump || fleeJump>0);
+    action.setJump(jump);
     action.setJumpDown(!jump);
     action.setAim(aim);
     action.setShoot(enemySpotted);
     action.setReload(reload);
     action.setSwapWeapon(swapWeapon);
     action.setPlantMine(false);
+
+    lastTile = tile;
+    lastPosition = unit.getPosition();
     return action;
   }
 
