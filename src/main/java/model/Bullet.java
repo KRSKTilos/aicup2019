@@ -3,32 +3,32 @@ package model;
 import util.StreamUtil;
 
 public class Bullet {
-    private model.WeaponType weaponType;
-    public model.WeaponType getWeaponType() { return weaponType; }
-    public void setWeaponType(model.WeaponType weaponType) { this.weaponType = weaponType; }
+    private WeaponType weaponType;
+    public WeaponType getWeaponType() { return weaponType; }
+    public void setWeaponType(WeaponType weaponType) { this.weaponType = weaponType; }
     private int unitId;
     public int getUnitId() { return unitId; }
     public void setUnitId(int unitId) { this.unitId = unitId; }
     private int playerId;
     public int getPlayerId() { return playerId; }
     public void setPlayerId(int playerId) { this.playerId = playerId; }
-    private model.Vec2Double position;
-    public model.Vec2Double getPosition() { return position; }
-    public void setPosition(model.Vec2Double position) { this.position = position; }
-    private model.Vec2Double velocity;
-    public model.Vec2Double getVelocity() { return velocity; }
-    public void setVelocity(model.Vec2Double velocity) { this.velocity = velocity; }
+    private Vec2Double position;
+    public Vec2Double getPosition() { return position; }
+    public void setPosition(Vec2Double position) { this.position = position; }
+    private Vec2Double velocity;
+    public Vec2Double getVelocity() { return velocity; }
+    public void setVelocity(Vec2Double velocity) { this.velocity = velocity; }
     private int damage;
     public int getDamage() { return damage; }
     public void setDamage(int damage) { this.damage = damage; }
     private double size;
     public double getSize() { return size; }
     public void setSize(double size) { this.size = size; }
-    private model.ExplosionParams explosionParams;
-    public model.ExplosionParams getExplosionParams() { return explosionParams; }
-    public void setExplosionParams(model.ExplosionParams explosionParams) { this.explosionParams = explosionParams; }
+    private ExplosionParams explosionParams;
+    public ExplosionParams getExplosionParams() { return explosionParams; }
+    public void setExplosionParams(ExplosionParams explosionParams) { this.explosionParams = explosionParams; }
     public Bullet() {}
-    public Bullet(model.WeaponType weaponType, int unitId, int playerId, model.Vec2Double position, model.Vec2Double velocity, int damage, double size, model.ExplosionParams explosionParams) {
+    public Bullet(WeaponType weaponType, int unitId, int playerId, Vec2Double position, Vec2Double velocity, int damage, double size, ExplosionParams explosionParams) {
         this.weaponType = weaponType;
         this.unitId = unitId;
         this.playerId = playerId;
@@ -42,25 +42,25 @@ public class Bullet {
         Bullet result = new Bullet();
         switch (StreamUtil.readInt(stream)) {
         case 0:
-            result.weaponType = model.WeaponType.PISTOL;
+            result.weaponType = WeaponType.PISTOL;
             break;
         case 1:
-            result.weaponType = model.WeaponType.ASSAULT_RIFLE;
+            result.weaponType = WeaponType.ASSAULT_RIFLE;
             break;
         case 2:
-            result.weaponType = model.WeaponType.ROCKET_LAUNCHER;
+            result.weaponType = WeaponType.ROCKET_LAUNCHER;
             break;
         default:
             throw new java.io.IOException("Unexpected discriminant value");
         }
         result.unitId = StreamUtil.readInt(stream);
         result.playerId = StreamUtil.readInt(stream);
-        result.position = model.Vec2Double.readFrom(stream);
-        result.velocity = model.Vec2Double.readFrom(stream);
+        result.position = Vec2Double.readFrom(stream);
+        result.velocity = Vec2Double.readFrom(stream);
         result.damage = StreamUtil.readInt(stream);
         result.size = StreamUtil.readDouble(stream);
         if (StreamUtil.readBoolean(stream)) {
-            result.explosionParams = model.ExplosionParams.readFrom(stream);
+            result.explosionParams = ExplosionParams.readFrom(stream);
         } else {
             result.explosionParams = null;
         }

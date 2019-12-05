@@ -9,6 +9,7 @@ public class MyStrategy {
   private boolean findGoodWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
+  private int fleeJump = 0;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
     if (rocketLauncherDamage <= 0) {
@@ -132,24 +133,61 @@ public class MyStrategy {
       }
     }
 
-    if (enemySpotted && dest==null) {
-      for (Bullet bullet : game.getBullets()) {
-        if (bullet.getPlayerId() != unit.getPlayerId()) {
-          /* jump from bullet */
-        }
-      }
-    }
-
     UnitAction action = new UnitAction();
     if (swapWeapon) {
       action.setVelocity(0);
     } else {
       action.setVelocity((targetPos.getX() - unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed());
     }
-    action.setJump(jump);
+
+    if (dest==null) {
+      /* flee from bullets */
+      for (Bullet bullet : game.getBullets()) {
+        /*
+        if (bullet.getPlayerId() != unit.getPlayerId()) {
+          System.out.println("TICK " + game.getCurrentTick());
+          System.out.println("TPS " + game.getProperties().getTicksPerSecond());
+          System.out.println("BULLET   X:" + bullet.getPosition().getX() + " Y:" + bullet.getPosition().getY());
+          System.out.println("VELOCITY X:" + bullet.getVelocity().getX() + " Y:" + bullet.getVelocity().getY());
+          double deltaX = bullet.getVelocity().getX()/game.getProperties().getTicksPerSecond();
+          double deltaY = bullet.getVelocity().getY()/game.getProperties().getTicksPerSecond();
+          double ticksMultiply = 6;
+          Vec2Double bulletPosition = new Vec2Double(
+                  bullet.getPosition().getX()+(deltaX*ticksMultiply),
+                  bullet.getPosition().getY()+(deltaY*ticksMultiply)
+          );
+
+          System.out.println("BULLET_POSITION X:" + bulletPosition.getX() + " Y:" + bullet.getPosition().getY());
+          int hitStrategy = unitHit(unit, bullet.getPosition(), bulletPosition);
+          switch (hitStrategy) {
+            case 1:
+              fleeJump = (int) (game.getProperties().getTicksPerSecond()/2);
+              break;
+            case 2:
+              break;
+            case 3:
+              fleeJump = 0;
+              break;
+            case 4:
+            default:
+          }
+          System.out.println("-----");
+        }
+      */
+      }
+    }
+
+    boolean reload = unit.getWeapon()!=null && unit.getWeapon().getMagazine()==0;
+
+    if (fleeJump > 0) {
+      fleeJump--;
+    }
+
+    action.setJump(jump || fleeJump>0);
     action.setJumpDown(!jump);
     action.setAim(aim);
     action.setShoot(enemySpotted);
+    action.setReload(reload);
     action.setSwapWeapon(swapWeapon);
     action.setPlantMine(false);
     return action;
@@ -239,5 +277,45 @@ public class MyStrategy {
     double x = a.getX() + (b.getX()-a.getX())*k;
     double y = a.getY() + (b.getY()-a.getY())*k;
     return new Vec2Double(x, y);
+  }
+
+  /**
+   * Направление уворота.
+   * 0 - ignore
+   * 1 - up
+   * 2 - right
+   * 3 - down
+   * 4 - left
+   * @param unit
+   * @param start
+   * @param stop
+   * @return
+   */
+  static int unitHit(Unit unit, Vec2Double start, Vec2Double stop) {
+    final int HOLD = 0;
+    final int UP = 1;
+    final int RIGHT = 2;
+    final int DOWN = 3;
+    final int LEFT = 4;
+    int result = HOLD;
+    int distance = (int) distanceSqr(start, stop);
+    System.out.println("distance " + distance);
+    for (int i=0; i<distance; i++) {
+      Vec2Double point = pointAtVectorOnDistance(start, stop, i);
+      double x = unit.getPosition().getX()-unit.getSize().getX()/2;
+      double y = unit.getPosition().getY();
+      if (x<point.getX() && point.getX()<unit.getPosition().getX()+unit.getSize().getX()
+              && y<point.getY() && point.getY()<unit.getPosition().getY()+unit.getSize().getY()) {
+        System.out.println("<< DANGER >>");
+        boolean head = point.getY() >= unit.getPosition().getY()+unit.getSize().getY()/2;
+        if (head) {
+          System.out.println("<HEAD>");
+        } else {
+          System.out.println("<LEG>");
+          return UP;
+        }
+      }
+    }
+    return result;
   }
 }
