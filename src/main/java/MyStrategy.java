@@ -4,7 +4,7 @@ import java.util.*;
 
 public class MyStrategy {
   private static int MIN_DISTANCE_TO_ENEMY = 1;
-  private static int MIN_HEALTH_PERCENT = 45;
+  private static int MIN_HEALTH_PERCENT = 50;
   private boolean findGoodWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
