@@ -52,13 +52,13 @@ public class MyStrategy {
     int userHealthPercent = game.getProperties().getUnitMaxHealth() / 100 * unit.getHealth();
     if (userHealthPercent < MIN_HEALTH_PERCENT) {
       debug.draw(new CustomData.Log("LOW HP! LESS THAN " + MIN_HEALTH_PERCENT));
-      findHealthPack(unit, game);
+      findHealthPack(unit, enemy, game);
     } else if (enemy!=null && enemy.getWeapon()!=null) {
       if (enemy.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)
               && unit.getHealth() <= game.getProperties().getWeaponParams()
               .get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage()) {
         debug.draw(new CustomData.Log("LOW HP! ROCKET LAUNCHER PANIC!"));
-        findHealthPack(unit, game);
+        findHealthPack(unit, enemy, game);
       }
     }
 
@@ -115,6 +115,17 @@ public class MyStrategy {
         if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
           needStand = true;
         }
+      }
+    }
+
+    if (dest!=null && enemy!=null) {
+      if (dest.getPosition().getX()<unit.getPosition().getX()
+              && isJumpOnEnemy(unit, enemy, true)) {
+        jump = true;
+      }
+      if (dest.getPosition().getX()>unit.getPosition().getX()
+              && isJumpOnEnemy(unit, enemy, false)) {
+        jump = true;
       }
     }
 
@@ -218,7 +229,19 @@ public class MyStrategy {
     return action;
   }
 
-  private void findHealthPack(Unit unit, Game game) {
+  private boolean isJumpOnEnemy(Unit unit, Unit enemy, boolean leftWalk) {
+    int enemyX = (int) enemy.getPosition().getX();
+    int x = (int) unit.getPosition().getX();
+    if (leftWalk && ((x-1)==enemyX))
+      return true;
+
+    if (!leftWalk && (x+1)==enemyX)
+      return true;
+
+    return false;
+  }
+
+  private void findHealthPack(Unit unit, Unit enemy, Game game) {
     if (dest==null || dest.getItem() instanceof Item.HealthPack) {
       Map<LootBox, Double> packs = new HashMap<>();
       for (LootBox lootBox : game.getLootBoxes()) {
@@ -233,6 +256,24 @@ public class MyStrategy {
                 .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
         LootBox nearPack = sortedMap.entrySet().iterator().next().getKey();
         dest = nearPack;
+        if (unit.getPosition().getX() < enemy.getPosition().getX()) {
+          /*find left from enemy*/
+          for (LootBox lootBox : sortedMap.keySet()) {
+            if (lootBox.getPosition().getX() < enemy.getPosition().getX()) {
+              dest = lootBox;
+              break;
+            }
+          }
+        }
+        if (unit.getPosition().getX() > enemy.getPosition().getX()) {
+          /*find right from enemy*/
+          for (LootBox lootBox : sortedMap.keySet()) {
+            if (lootBox.getPosition().getX() > enemy.getPosition().getX()) {
+              dest = lootBox;
+              break;
+            }
+          }
+        }
       }
     }
   }
