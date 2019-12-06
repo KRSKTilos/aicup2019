@@ -23,9 +23,6 @@ public class MyStrategy {
       debug.draw(new CustomData.Log("FIND_GOOD_WEAPON"));
     }
     checkDestinationExists(game);
-    if (dest!=null) {
-      System.out.println("UNIT x:" + unit.getPosition().getX() + " y:" + unit.getPosition().getY());
-    }
     boolean swapWeapon = false;
     if (dest != null) {
       double deltaX = dest.getPosition().getX() - unit.getPosition().getX();
@@ -69,11 +66,14 @@ public class MyStrategy {
       debug.draw(new CustomData.Log("LOW HP! LESS THAN " + MIN_HEALTH_PERCENT));
       findHealthPack(unit, enemy, game);
     } else if (enemy!=null && enemy.getWeapon()!=null) {
-      if (enemy.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)
-              && unit.getHealth() <= game.getProperties().getWeaponParams()
-              .get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage()) {
-        debug.draw(new CustomData.Log("LOW HP! ROCKET LAUNCHER PANIC!"));
-        findHealthPack(unit, enemy, game);
+      if (enemy.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)) {
+        int bulletDamage = game.getProperties().getWeaponParams().get(WeaponType.ROCKET_LAUNCHER).getBullet().getDamage();
+        int explosionDamage = game.getProperties().getWeaponParams().get(WeaponType.ROCKET_LAUNCHER).getExplosion().getDamage();
+        int totalMaxDamage = bulletDamage + explosionDamage;
+        if (totalMaxDamage >= unit.getHealth()) {
+          debug.draw(new CustomData.Log("LOW HP! ROCKET LAUNCHER PANIC!"));
+          findHealthPack(unit, enemy, game);
+        }
       }
     }
 
@@ -246,6 +246,29 @@ public class MyStrategy {
           System.out.println("-----");
         }
       */
+      }
+    }
+
+    for (Mine mine : game.getMines()) {
+      double safeRadius = 1;
+      double radius = mine.getExplosionParams().getRadius() + safeRadius;
+      double deltaX = Math.abs(unit.getPosition().getX() - mine.getPosition().getX());
+      double deltaY = Math.abs(unit.getPosition().getY() - mine.getPosition().getY());
+      if (mine.getState()==MineState.TRIGGERED) {
+        if (deltaX<=radius && deltaY<=radius) {
+          int levelSize = game.getLevel().getTiles().length;
+          debug.draw(new CustomData.Log("FLEE_FROM_MINE"));
+          if (mine.getPosition().getX() <= unit.getPosition().getX()) {
+            /*flee to right*/
+            velocity = ((levelSize-1)-unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed();
+            jump = true;
+          }
+          if (mine.getPosition().getX() > unit.getPosition().getX()) {
+            /*flee to left*/
+            velocity = (0-unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed();
+            jump = true;
+          }
+        }
       }
     }
 
