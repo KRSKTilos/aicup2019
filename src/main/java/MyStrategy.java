@@ -9,6 +9,7 @@ public class MyStrategy {
   private static double MIN_DISTANCE_TO_ENEMY = 0.5f;
   private static int MIN_HEALTH_PERCENT = 70;
   private boolean findGoodWeapon = false;
+  private boolean findNearWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
   private Vec2Double lastPosition = new Vec2Double(0,0);
@@ -45,6 +46,14 @@ public class MyStrategy {
           tickAtDest = 0;
           dest = null;
         }
+      }
+    }
+
+    if (findNearWeapon) {
+      /* maybe already pickup */
+      if (unit.getWeapon() != null) {
+        findNearWeapon = false;
+        dest = null;
       }
     }
 
@@ -100,26 +109,34 @@ public class MyStrategy {
       Tile rightTile = game.getLevel().getTiles()[x+1][y];
       Tile currentTile = game.getLevel().getTiles()[x][y];
       if (rightTile.equals(Tile.WALL)) {
-        jump = true;
-        int lastX = (int) lastPosition.getX();
-        int lastY = (int) lastPosition.getY();
-        if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
-          needStand = isNeedStand(game, x, y);
+        if (slideDown(game, unit, targetPos)) {
+          jump = false;
+        } else {
+          jump = true;
+          int lastX = (int) lastPosition.getX();
+          int lastY = (int) lastPosition.getY();
+          if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
+            needStand = isNeedStand(game, x, y);
+          }
         }
       }
     }
 
-    if (targetPos.getX() <= unit.getPosition().getX()) {
+    if (targetPos.getX() < unit.getPosition().getX()) {
       int x = (int) unit.getPosition().getX();
       int y = (int) unit.getPosition().getY();
       Tile leftTile = game.getLevel().getTiles()[x-1][y];
       Tile currentTile = game.getLevel().getTiles()[x][y];
       if (leftTile.equals(Tile.WALL)) {
-        jump = true;
-        int lastX = (int) lastPosition.getX();
-        int lastY = (int) lastPosition.getY();
-        if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
-          needStand = isNeedStand(game, x, y);
+        if (slideDown(game, unit, targetPos)) {
+          jump = false;
+        } else {
+          jump = true;
+          int lastX = (int) lastPosition.getX();
+          int lastY = (int) lastPosition.getY();
+          if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
+            needStand = isNeedStand(game, x, y);
+          }
         }
       }
     }
@@ -287,6 +304,32 @@ public class MyStrategy {
     return !emptyTilesUp;
   }
 
+  private boolean slideDown(Game game, Unit unit, Vec2Double target) {
+    boolean slideDown = false;
+    int posX = (int) unit.getPosition().getX();
+    int posY = (int) unit.getPosition().getY();
+    int destX = (int) target.getX();
+    int destY = (int) target.getY();
+    if (destX==posX && destY<=posY) {
+      boolean free = true;
+      int deltaY = destY-posY;
+      for (int i=1; i<deltaY; i++) {
+        Tile tile = game.getLevel().getTiles()[posX][posY+i];
+        if (tile == Tile.WALL) {
+          free = false;
+          break;
+        }
+      }
+      if (free) {
+        slideDown = true;
+      }
+    }
+    if (slideDown) {
+      System.out.println("SLIDE_DOWN");
+    }
+    return slideDown;
+  }
+
   private boolean isJumpOnEnemy(Unit unit, Unit enemy, boolean leftWalk) {
     int enemyX = (int) enemy.getPosition().getX();
     int x = (int) unit.getPosition().getX();
@@ -438,6 +481,7 @@ public class MyStrategy {
         if (dest == null || distanceSqr(unit.getPosition(),
                 lootBox.getPosition()) < distanceSqr(unit.getPosition(), dest.getPosition())) {
           System.out.println("NEAR WEAPON " + ((Item.Weapon) lootBox.getItem()).getWeaponType());
+          findNearWeapon = true;
           dest = lootBox;
         }
       }
