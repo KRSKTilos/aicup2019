@@ -3,40 +3,46 @@ import model.*;
 import java.util.*;
 
 public class MyStrategy {
-  private static int MIN_DISTANCE_TO_ENEMY = 1;
-  private static int MIN_HEALTH_PERCENT = 50;
+  private static int MAX_SECONDS_AT_DEST = 2;
+  private static WeaponType PERFECT_WEAPON_TYPE = WeaponType.PISTOL;
+  private static WeaponType GOOD_WEAPON_TYPE = WeaponType.ASSAULT_RIFLE;
+  private static double MIN_DISTANCE_TO_ENEMY = 0.5f;
+  private static int MIN_HEALTH_PERCENT = 70;
   private boolean findGoodWeapon = false;
   private boolean goodWeapon = false;
   private LootBox dest = null;
   private Vec2Double lastPosition = new Vec2Double(0,0);
   private Tile lastTile = Tile.EMPTY;
   private boolean needStand = false;
+  private int closeCombat = 0;
+  private int tickAtDest = 0;
 
   public UnitAction getAction(Unit unit, Game game, Debug debug) {
-
+    if (findGoodWeapon) {
+      debug.draw(new CustomData.Log("FIND_GOOD_WEAPON"));
+    }
+    checkDestinationExists(game);
+    if (dest!=null) {
+      System.out.println("UNIT x:" + unit.getPosition().getX() + " y:" + unit.getPosition().getY());
+    }
     boolean swapWeapon = false;
-    /* loot box pickup */
     if (dest != null) {
-      if (findGoodWeapon) {
-        double deltaX = dest.getPosition().getX() - unit.getPosition().getX();
-        double deltaY = dest.getPosition().getY() - unit.getPosition().getY();
-        /* todo: boxsize */
-        if (Math.abs(deltaX) <= 0.5 && Math.abs(deltaY) <= 0.5) {
-          debug.draw(new CustomData.Log("BINGO! Normal Weapon!"));
+      double deltaX = dest.getPosition().getX() - unit.getPosition().getX();
+      double deltaY = dest.getPosition().getY() - unit.getPosition().getY();
+      if (Math.abs(deltaX)<=0.2 && Math.abs(deltaY)<=0.2) {
+        System.out.println("AT_DEST");
+        tickAtDest++;
+        if (findGoodWeapon) {
+          System.out.println("BINGO");
           findGoodWeapon = false;
           swapWeapon = true;
-          dest = null;
           goodWeapon = true;
+          dest = null;
+          tickAtDest = 0;
         }
-      } else {
-        boolean contains = false;
-        for (LootBox lootBox : game.getLootBoxes()) {
-          if (lootBox.equals(dest)) {
-            contains = true;
-            break;
-          }
-        }
-        if (!contains) {
+        if (tickAtDest > game.getProperties().getTicksPerSecond()*MAX_SECONDS_AT_DEST) {
+          System.out.println("<< LONG_WAIT >>");
+          tickAtDest = 0;
           dest = null;
         }
       }
@@ -98,7 +104,7 @@ public class MyStrategy {
         int lastX = (int) lastPosition.getX();
         int lastY = (int) lastPosition.getY();
         if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
-          needStand = true;
+          needStand = isNeedStand(game, x, y);
         }
       }
     }
@@ -113,11 +119,12 @@ public class MyStrategy {
         int lastX = (int) lastPosition.getX();
         int lastY = (int) lastPosition.getY();
         if (lastTile.equals(Tile.PLATFORM) && currentTile.equals(Tile.EMPTY) && (lastX!=x || lastY!=y)) {
-          needStand = true;
+          needStand = isNeedStand(game, x, y);
         }
       }
     }
 
+    /* перепрыгнуть противника при движении к цели */
     if (dest!=null && enemy!=null) {
       if (dest.getPosition().getX()<unit.getPosition().getX()
               && isJumpOnEnemy(unit, enemy, true)) {
@@ -129,23 +136,14 @@ public class MyStrategy {
       }
     }
 
-    boolean enemySpotted = true;
-    int tilesToEnemyX = (int) Math.abs(unit.getPosition().getX()-enemy.getPosition().getX());
-    if (tilesToEnemyX > 0) {
-      /* check blind tiles */
-      for (int tileIndex=0; tileIndex<tilesToEnemyX; tileIndex++) {
-        Vec2Double point = pointAtVectorOnDistance(unit.getPosition(), enemy.getPosition(), tileIndex);
-        Tile tile = game.getLevel().getTiles()[(int) point.getX()][(int) point.getY()];
-        if (tile.equals(Tile.WALL)) {
-          enemySpotted = false;
-          break;
-        }
-      }
+    boolean enemySpotted = false;
+    if (enemy != null) {
+      enemySpotted = isEnemySpotted(game, unit, enemy);
     }
 
+    double minDistance = MIN_DISTANCE_TO_ENEMY;
     if (dest==null && unit.getWeapon()!=null) {
       /* safe distance */
-      double minDistance = MIN_DISTANCE_TO_ENEMY;
       if (unit.getWeapon().getTyp().equals(WeaponType.ROCKET_LAUNCHER)) {
         minDistance = unit.getWeapon().getParams().getExplosion().getRadius()*2;
       }
@@ -156,11 +154,45 @@ public class MyStrategy {
       }
     }
 
+    if (closeCombat != 0) {
+      System.out.println("closeCombat = " + closeCombat);
+    }
+
+    if (enemySpotted) {
+      closeCombat = 0;
+    }
+
+    double velocity;
+    velocity = (targetPos.getX()-unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed();
     UnitAction action = new UnitAction();
     if (swapWeapon) {
-      action.setVelocity(0);
-    } else {
-      action.setVelocity((targetPos.getX() - unit.getPosition().getX()) * game.getProperties().getUnitMaxHorizontalSpeed());
+      velocity = 0;
+    } else if (dest==null && enemy!=null) {
+      final int RIGHT = 1;
+      final int LEFT = -1;
+      if (Math.abs(enemy.getPosition().getX() - unit.getPosition().getX()) <= minDistance) {
+        if (enemy.getPosition().getY() < unit.getPosition().getY()) {
+          if (enemySpotted) {
+            closeCombat = 0;
+            velocity = 0;
+          } else {
+            if (closeCombat == 0) {
+              if (enemy.getPosition().getX() <= unit.getPosition().getX()) {
+                closeCombat = LEFT;
+              }
+              if (enemy.getPosition().getX() >= unit.getPosition().getX()) {
+                closeCombat = RIGHT;
+              }
+            }
+          }
+        }
+      }
+      if (closeCombat == LEFT) {
+        velocity = -game.getProperties().getUnitMaxHorizontalSpeed();
+      }
+      if (closeCombat == RIGHT) {
+        velocity = game.getProperties().getUnitMaxHorizontalSpeed();
+      }
     }
 
     if (dest==null) {
@@ -200,7 +232,17 @@ public class MyStrategy {
       }
     }
 
-    boolean reload = unit.getWeapon()!=null && unit.getWeapon().getMagazine()==0;
+    boolean reload = false;
+    if (unit.getWeapon() != null) {
+      Weapon weapon = unit.getWeapon();
+      if (weapon.getMagazine() == 0) {
+        reload = true;
+      } else if (!enemySpotted) {
+        if (weapon.getMagazine() <= weapon.getParams().getMagazineSize()/2) {
+          reload = true;
+        }
+      }
+    }
 
     int x = (int) unit.getPosition().getX();
     int y = (int) unit.getPosition().getY();
@@ -216,6 +258,7 @@ public class MyStrategy {
       }
     }
 
+    action.setVelocity(velocity);
     action.setJump(jump);
     action.setJumpDown(!jump);
     action.setAim(aim);
@@ -227,6 +270,21 @@ public class MyStrategy {
     lastTile = tile;
     lastPosition = unit.getPosition();
     return action;
+  }
+
+  private boolean isNeedStand(Game game, int currentTileX, int currentTileY) {
+    boolean emptyTilesUp = true;
+    int tileUpCheckSize = 2;
+    for (int tileUpIndex=1; tileUpIndex<=tileUpCheckSize; tileUpIndex++) {
+      int tileUpY = currentTileY + tileUpIndex;
+      if (tileUpIndex <= game.getLevel().getTiles().length) {
+        Tile upTile = game.getLevel().getTiles()[currentTileX][tileUpY];
+        if (upTile != Tile.EMPTY) {
+          emptyTilesUp = false;
+        }
+      }
+    }
+    return !emptyTilesUp;
   }
 
   private boolean isJumpOnEnemy(Unit unit, Unit enemy, boolean leftWalk) {
@@ -278,8 +336,59 @@ public class MyStrategy {
     }
   }
 
+  private void checkDestinationExists(Game game) {
+    if (dest!=null) {
+      System.out.println("DEST x:" + dest.getPosition().getX() + " y:" + dest.getPosition().getY());
+    }
+    if (dest != null) {
+      boolean exists = false;
+      for (LootBox lootBox : game.getLootBoxes()) {
+        if (lootBox.getPosition().getX()==dest.getPosition().getX()
+                && lootBox.getPosition().getY()==dest.getPosition().getY()) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        dest = null;
+      }
+    }
+  }
+
+  /**
+   * Определение видимости противника.
+   */
+  private boolean isEnemySpotted(Game game, Unit unit, Unit enemy) {
+    boolean enemySpotted = true;
+    Vec2Double unitPosition = new Vec2Double(
+            unit.getPosition().getX(),
+            unit.getPosition().getY()+unit.getSize().getY()/2
+    );
+    Vec2Double enemyPosition = new Vec2Double(
+            enemy.getPosition().getX(),
+            enemy.getPosition().getY()+enemy.getSize().getY()/2
+    );
+    int k = (int) game.getProperties().getTicksPerSecond();
+    double deltaX = (unitPosition.getX()-enemyPosition.getX())/k;
+    double deltaY = (unitPosition.getY()-enemyPosition.getY())/k;
+    double positionX = unitPosition.getX();
+    double positionY = unitPosition.getY();
+    for (int i=0; i<k; i++) {
+      positionX-=deltaX;
+      positionY-=deltaY;
+      int tileX = (int) positionX;
+      int tileY = (int) positionY;
+      Tile tile = game.getLevel().getTiles()[tileX][tileY];
+      if (tile == Tile.WALL) {
+        enemySpotted = false;
+        break;
+      }
+    }
+    return enemySpotted;
+  }
+
   private void findGoodWeapon(Unit unit, Game game) {
-    if (goodWeapon)
+    if (unit.getWeapon().getTyp().equals(PERFECT_WEAPON_TYPE) || goodWeapon)
       return;
 
     Set<WeaponType> weaponTypes = new HashSet<>();
@@ -302,10 +411,10 @@ public class MyStrategy {
             .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
 
     WeaponType findType = null;
-    if (weaponTypes.contains(WeaponType.ASSAULT_RIFLE)) {
-      findType = WeaponType.ASSAULT_RIFLE;
-    } else if (weaponTypes.contains(WeaponType.PISTOL)) {
-      findType = WeaponType.PISTOL;
+    if (weaponTypes.contains(PERFECT_WEAPON_TYPE)) {
+      findType = PERFECT_WEAPON_TYPE;
+    } else if (weaponTypes.contains(GOOD_WEAPON_TYPE)) {
+      findType = GOOD_WEAPON_TYPE;
     }
 
     if (findType != null) {
@@ -314,6 +423,7 @@ public class MyStrategy {
         LootBox lootBox = lootBoxIterator.next().getKey();
         Item.Weapon weapon = (Item.Weapon) lootBox.getItem();
         if (weapon.getWeaponType().equals(findType)) {
+          System.out.println("FIND GOOD WEAPON: " + weapon.getWeaponType());
           findGoodWeapon = true;
           dest = lootBox;
           break;
@@ -327,6 +437,7 @@ public class MyStrategy {
       if (lootBox.getItem() instanceof Item.Weapon) {
         if (dest == null || distanceSqr(unit.getPosition(),
                 lootBox.getPosition()) < distanceSqr(unit.getPosition(), dest.getPosition())) {
+          System.out.println("NEAR WEAPON " + ((Item.Weapon) lootBox.getItem()).getWeaponType());
           dest = lootBox;
         }
       }
