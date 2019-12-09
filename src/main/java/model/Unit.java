@@ -12,15 +12,15 @@ public class Unit {
     private int health;
     public int getHealth() { return health; }
     public void setHealth(int health) { this.health = health; }
-    private Vec2Double position;
-    public Vec2Double getPosition() { return position; }
-    public void setPosition(Vec2Double position) { this.position = position; }
-    private Vec2Double size;
-    public Vec2Double getSize() { return size; }
-    public void setSize(Vec2Double size) { this.size = size; }
-    private JumpState jumpState;
-    public JumpState getJumpState() { return jumpState; }
-    public void setJumpState(JumpState jumpState) { this.jumpState = jumpState; }
+    private model.Vec2Double position;
+    public model.Vec2Double getPosition() { return position; }
+    public void setPosition(model.Vec2Double position) { this.position = position; }
+    private model.Vec2Double size;
+    public model.Vec2Double getSize() { return size; }
+    public void setSize(model.Vec2Double size) { this.size = size; }
+    private model.JumpState jumpState;
+    public model.JumpState getJumpState() { return jumpState; }
+    public void setJumpState(model.JumpState jumpState) { this.jumpState = jumpState; }
     private boolean walkedRight;
     public boolean isWalkedRight() { return walkedRight; }
     public void setWalkedRight(boolean walkedRight) { this.walkedRight = walkedRight; }
@@ -36,11 +36,11 @@ public class Unit {
     private int mines;
     public int getMines() { return mines; }
     public void setMines(int mines) { this.mines = mines; }
-    private Weapon weapon;
-    public Weapon getWeapon() { return weapon; }
-    public void setWeapon(Weapon weapon) { this.weapon = weapon; }
+    private model.Weapon weapon;
+    public model.Weapon getWeapon() { return weapon; }
+    public void setWeapon(model.Weapon weapon) { this.weapon = weapon; }
     public Unit() {}
-    public Unit(int playerId, int id, int health, Vec2Double position, Vec2Double size, JumpState jumpState, boolean walkedRight, boolean stand, boolean onGround, boolean onLadder, int mines, Weapon weapon) {
+    public Unit(int playerId, int id, int health, model.Vec2Double position, model.Vec2Double size, model.JumpState jumpState, boolean walkedRight, boolean stand, boolean onGround, boolean onLadder, int mines, model.Weapon weapon) {
         this.playerId = playerId;
         this.id = id;
         this.health = health;
@@ -59,16 +59,16 @@ public class Unit {
         result.playerId = StreamUtil.readInt(stream);
         result.id = StreamUtil.readInt(stream);
         result.health = StreamUtil.readInt(stream);
-        result.position = Vec2Double.readFrom(stream);
-        result.size = Vec2Double.readFrom(stream);
-        result.jumpState = JumpState.readFrom(stream);
+        result.position = model.Vec2Double.readFrom(stream);
+        result.size = model.Vec2Double.readFrom(stream);
+        result.jumpState = model.JumpState.readFrom(stream);
         result.walkedRight = StreamUtil.readBoolean(stream);
         result.stand = StreamUtil.readBoolean(stream);
         result.onGround = StreamUtil.readBoolean(stream);
         result.onLadder = StreamUtil.readBoolean(stream);
         result.mines = StreamUtil.readInt(stream);
         if (StreamUtil.readBoolean(stream)) {
-            result.weapon = Weapon.readFrom(stream);
+            result.weapon = model.Weapon.readFrom(stream);
         } else {
             result.weapon = null;
         }

@@ -12,9 +12,9 @@ public class UnitAction {
     private boolean jumpDown;
     public boolean isJumpDown() { return jumpDown; }
     public void setJumpDown(boolean jumpDown) { this.jumpDown = jumpDown; }
-    private Vec2Double aim;
-    public Vec2Double getAim() { return aim; }
-    public void setAim(Vec2Double aim) { this.aim = aim; }
+    private model.Vec2Double aim;
+    public model.Vec2Double getAim() { return aim; }
+    public void setAim(model.Vec2Double aim) { this.aim = aim; }
     private boolean shoot;
     public boolean isShoot() { return shoot; }
     public void setShoot(boolean shoot) { this.shoot = shoot; }
@@ -28,7 +28,7 @@ public class UnitAction {
     public boolean isPlantMine() { return plantMine; }
     public void setPlantMine(boolean plantMine) { this.plantMine = plantMine; }
     public UnitAction() {}
-    public UnitAction(double velocity, boolean jump, boolean jumpDown, Vec2Double aim, boolean shoot, boolean reload, boolean swapWeapon, boolean plantMine) {
+    public UnitAction(double velocity, boolean jump, boolean jumpDown, model.Vec2Double aim, boolean shoot, boolean reload, boolean swapWeapon, boolean plantMine) {
         this.velocity = velocity;
         this.jump = jump;
         this.jumpDown = jumpDown;
@@ -43,7 +43,7 @@ public class UnitAction {
         result.velocity = StreamUtil.readDouble(stream);
         result.jump = StreamUtil.readBoolean(stream);
         result.jumpDown = StreamUtil.readBoolean(stream);
-        result.aim = Vec2Double.readFrom(stream);
+        result.aim = model.Vec2Double.readFrom(stream);
         result.shoot = StreamUtil.readBoolean(stream);
         result.reload = StreamUtil.readBoolean(stream);
         result.swapWeapon = StreamUtil.readBoolean(stream);

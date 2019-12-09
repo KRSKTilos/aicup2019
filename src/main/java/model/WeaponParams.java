@@ -24,14 +24,14 @@ public class WeaponParams {
     private double aimSpeed;
     public double getAimSpeed() { return aimSpeed; }
     public void setAimSpeed(double aimSpeed) { this.aimSpeed = aimSpeed; }
-    private BulletParams bullet;
-    public BulletParams getBullet() { return bullet; }
-    public void setBullet(BulletParams bullet) { this.bullet = bullet; }
-    private ExplosionParams explosion;
-    public ExplosionParams getExplosion() { return explosion; }
-    public void setExplosion(ExplosionParams explosion) { this.explosion = explosion; }
+    private model.BulletParams bullet;
+    public model.BulletParams getBullet() { return bullet; }
+    public void setBullet(model.BulletParams bullet) { this.bullet = bullet; }
+    private model.ExplosionParams explosion;
+    public model.ExplosionParams getExplosion() { return explosion; }
+    public void setExplosion(model.ExplosionParams explosion) { this.explosion = explosion; }
     public WeaponParams() {}
-    public WeaponParams(int magazineSize, double fireRate, double reloadTime, double minSpread, double maxSpread, double recoil, double aimSpeed, BulletParams bullet, ExplosionParams explosion) {
+    public WeaponParams(int magazineSize, double fireRate, double reloadTime, double minSpread, double maxSpread, double recoil, double aimSpeed, model.BulletParams bullet, model.ExplosionParams explosion) {
         this.magazineSize = magazineSize;
         this.fireRate = fireRate;
         this.reloadTime = reloadTime;
@@ -51,9 +51,9 @@ public class WeaponParams {
         result.maxSpread = StreamUtil.readDouble(stream);
         result.recoil = StreamUtil.readDouble(stream);
         result.aimSpeed = StreamUtil.readDouble(stream);
-        result.bullet = BulletParams.readFrom(stream);
+        result.bullet = model.BulletParams.readFrom(stream);
         if (StreamUtil.readBoolean(stream)) {
-            result.explosion = ExplosionParams.readFrom(stream);
+            result.explosion = model.ExplosionParams.readFrom(stream);
         } else {
             result.explosion = null;
         }

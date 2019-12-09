@@ -17,16 +17,16 @@ public abstract class PlayerMessageGame {
 
     public static class CustomDataMessage extends PlayerMessageGame {
         public static final int TAG = 0;
-        private CustomData data;
-        public CustomData getData() { return data; }
-        public void setData(CustomData data) { this.data = data; }
+        private model.CustomData data;
+        public model.CustomData getData() { return data; }
+        public void setData(model.CustomData data) { this.data = data; }
         public CustomDataMessage() {}
-        public CustomDataMessage(CustomData data) {
+        public CustomDataMessage(model.CustomData data) {
             this.data = data;
         }
         public static CustomDataMessage readFrom(java.io.InputStream stream) throws java.io.IOException {
             CustomDataMessage result = new CustomDataMessage();
-            result.data = CustomData.readFrom(stream);
+            result.data = model.CustomData.readFrom(stream);
             return result;
         }
         @Override
@@ -38,16 +38,16 @@ public abstract class PlayerMessageGame {
 
     public static class ActionMessage extends PlayerMessageGame {
         public static final int TAG = 1;
-        private Versioned action;
-        public Versioned getAction() { return action; }
-        public void setAction(Versioned action) { this.action = action; }
+        private model.Versioned action;
+        public model.Versioned getAction() { return action; }
+        public void setAction(model.Versioned action) { this.action = action; }
         public ActionMessage() {}
-        public ActionMessage(Versioned action) {
+        public ActionMessage(model.Versioned action) {
             this.action = action;
         }
         public static ActionMessage readFrom(java.io.InputStream stream) throws java.io.IOException {
             ActionMessage result = new ActionMessage();
-            result.action = Versioned.readFrom(stream);
+            result.action = model.Versioned.readFrom(stream);
             return result;
         }
         @Override

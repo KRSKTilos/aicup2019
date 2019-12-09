@@ -44,26 +44,26 @@ public abstract class CustomData {
 
     public static class Rect extends CustomData {
         public static final int TAG = 1;
-        private Vec2Float pos;
-        public Vec2Float getPos() { return pos; }
-        public void setPos(Vec2Float pos) { this.pos = pos; }
-        private Vec2Float size;
-        public Vec2Float getSize() { return size; }
-        public void setSize(Vec2Float size) { this.size = size; }
-        private ColorFloat color;
-        public ColorFloat getColor() { return color; }
-        public void setColor(ColorFloat color) { this.color = color; }
+        private model.Vec2Float pos;
+        public model.Vec2Float getPos() { return pos; }
+        public void setPos(model.Vec2Float pos) { this.pos = pos; }
+        private model.Vec2Float size;
+        public model.Vec2Float getSize() { return size; }
+        public void setSize(model.Vec2Float size) { this.size = size; }
+        private model.ColorFloat color;
+        public model.ColorFloat getColor() { return color; }
+        public void setColor(model.ColorFloat color) { this.color = color; }
         public Rect() {}
-        public Rect(Vec2Float pos, Vec2Float size, ColorFloat color) {
+        public Rect(model.Vec2Float pos, model.Vec2Float size, model.ColorFloat color) {
             this.pos = pos;
             this.size = size;
             this.color = color;
         }
         public static Rect readFrom(java.io.InputStream stream) throws java.io.IOException {
             Rect result = new Rect();
-            result.pos = Vec2Float.readFrom(stream);
-            result.size = Vec2Float.readFrom(stream);
-            result.color = ColorFloat.readFrom(stream);
+            result.pos = model.Vec2Float.readFrom(stream);
+            result.size = model.Vec2Float.readFrom(stream);
+            result.color = model.ColorFloat.readFrom(stream);
             return result;
         }
         @Override
@@ -77,20 +77,20 @@ public abstract class CustomData {
 
     public static class Line extends CustomData {
         public static final int TAG = 2;
-        private Vec2Float p1;
-        public Vec2Float getP1() { return p1; }
-        public void setP1(Vec2Float p1) { this.p1 = p1; }
-        private Vec2Float p2;
-        public Vec2Float getP2() { return p2; }
-        public void setP2(Vec2Float p2) { this.p2 = p2; }
+        private model.Vec2Float p1;
+        public model.Vec2Float getP1() { return p1; }
+        public void setP1(model.Vec2Float p1) { this.p1 = p1; }
+        private model.Vec2Float p2;
+        public model.Vec2Float getP2() { return p2; }
+        public void setP2(model.Vec2Float p2) { this.p2 = p2; }
         private float width;
         public float getWidth() { return width; }
         public void setWidth(float width) { this.width = width; }
-        private ColorFloat color;
-        public ColorFloat getColor() { return color; }
-        public void setColor(ColorFloat color) { this.color = color; }
+        private model.ColorFloat color;
+        public model.ColorFloat getColor() { return color; }
+        public void setColor(model.ColorFloat color) { this.color = color; }
         public Line() {}
-        public Line(Vec2Float p1, Vec2Float p2, float width, ColorFloat color) {
+        public Line(model.Vec2Float p1, model.Vec2Float p2, float width, model.ColorFloat color) {
             this.p1 = p1;
             this.p2 = p2;
             this.width = width;
@@ -98,10 +98,10 @@ public abstract class CustomData {
         }
         public static Line readFrom(java.io.InputStream stream) throws java.io.IOException {
             Line result = new Line();
-            result.p1 = Vec2Float.readFrom(stream);
-            result.p2 = Vec2Float.readFrom(stream);
+            result.p1 = model.Vec2Float.readFrom(stream);
+            result.p2 = model.Vec2Float.readFrom(stream);
             result.width = StreamUtil.readFloat(stream);
-            result.color = ColorFloat.readFrom(stream);
+            result.color = model.ColorFloat.readFrom(stream);
             return result;
         }
         @Override
@@ -116,18 +116,18 @@ public abstract class CustomData {
 
     public static class Polygon extends CustomData {
         public static final int TAG = 3;
-        private ColoredVertex[] vertices;
-        public ColoredVertex[] getVertices() { return vertices; }
-        public void setVertices(ColoredVertex[] vertices) { this.vertices = vertices; }
+        private model.ColoredVertex[] vertices;
+        public model.ColoredVertex[] getVertices() { return vertices; }
+        public void setVertices(model.ColoredVertex[] vertices) { this.vertices = vertices; }
         public Polygon() {}
-        public Polygon(ColoredVertex[] vertices) {
+        public Polygon(model.ColoredVertex[] vertices) {
             this.vertices = vertices;
         }
         public static Polygon readFrom(java.io.InputStream stream) throws java.io.IOException {
             Polygon result = new Polygon();
-            result.vertices = new ColoredVertex[StreamUtil.readInt(stream)];
+            result.vertices = new model.ColoredVertex[StreamUtil.readInt(stream)];
             for (int i = 0; i < result.vertices.length; i++) {
-                result.vertices[i] = ColoredVertex.readFrom(stream);
+                result.vertices[i] = model.ColoredVertex.readFrom(stream);
             }
             return result;
         }
@@ -135,7 +135,7 @@ public abstract class CustomData {
         public void writeTo(java.io.OutputStream stream) throws java.io.IOException {
             StreamUtil.writeInt(stream, TAG);
             StreamUtil.writeInt(stream, vertices.length);
-            for (ColoredVertex verticesElement : vertices) {
+            for (model.ColoredVertex verticesElement : vertices) {
                 verticesElement.writeTo(stream);
             }
         }
@@ -146,20 +146,20 @@ public abstract class CustomData {
         private String text;
         public String getText() { return text; }
         public void setText(String text) { this.text = text; }
-        private Vec2Float pos;
-        public Vec2Float getPos() { return pos; }
-        public void setPos(Vec2Float pos) { this.pos = pos; }
-        private TextAlignment alignment;
-        public TextAlignment getAlignment() { return alignment; }
-        public void setAlignment(TextAlignment alignment) { this.alignment = alignment; }
+        private model.Vec2Float pos;
+        public model.Vec2Float getPos() { return pos; }
+        public void setPos(model.Vec2Float pos) { this.pos = pos; }
+        private model.TextAlignment alignment;
+        public model.TextAlignment getAlignment() { return alignment; }
+        public void setAlignment(model.TextAlignment alignment) { this.alignment = alignment; }
         private float size;
         public float getSize() { return size; }
         public void setSize(float size) { this.size = size; }
-        private ColorFloat color;
-        public ColorFloat getColor() { return color; }
-        public void setColor(ColorFloat color) { this.color = color; }
+        private model.ColorFloat color;
+        public model.ColorFloat getColor() { return color; }
+        public void setColor(model.ColorFloat color) { this.color = color; }
         public PlacedText() {}
-        public PlacedText(String text, Vec2Float pos, TextAlignment alignment, float size, ColorFloat color) {
+        public PlacedText(String text, model.Vec2Float pos, model.TextAlignment alignment, float size, model.ColorFloat color) {
             this.text = text;
             this.pos = pos;
             this.alignment = alignment;
@@ -169,22 +169,22 @@ public abstract class CustomData {
         public static PlacedText readFrom(java.io.InputStream stream) throws java.io.IOException {
             PlacedText result = new PlacedText();
             result.text = StreamUtil.readString(stream);
-            result.pos = Vec2Float.readFrom(stream);
+            result.pos = model.Vec2Float.readFrom(stream);
             switch (StreamUtil.readInt(stream)) {
             case 0:
-                result.alignment = TextAlignment.LEFT;
+                result.alignment = model.TextAlignment.LEFT;
                 break;
             case 1:
-                result.alignment = TextAlignment.CENTER;
+                result.alignment = model.TextAlignment.CENTER;
                 break;
             case 2:
-                result.alignment = TextAlignment.RIGHT;
+                result.alignment = model.TextAlignment.RIGHT;
                 break;
             default:
                 throw new java.io.IOException("Unexpected discriminant value");
             }
             result.size = StreamUtil.readFloat(stream);
-            result.color = ColorFloat.readFrom(stream);
+            result.color = model.ColorFloat.readFrom(stream);
             return result;
         }
         @Override

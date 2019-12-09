@@ -3,12 +3,12 @@ package model;
 import util.StreamUtil;
 
 public class Weapon {
-    private WeaponType typ;
-    public WeaponType getTyp() { return typ; }
-    public void setTyp(WeaponType typ) { this.typ = typ; }
-    private WeaponParams params;
-    public WeaponParams getParams() { return params; }
-    public void setParams(WeaponParams params) { this.params = params; }
+    private model.WeaponType typ;
+    public model.WeaponType getTyp() { return typ; }
+    public void setTyp(model.WeaponType typ) { this.typ = typ; }
+    private model.WeaponParams params;
+    public model.WeaponParams getParams() { return params; }
+    public void setParams(model.WeaponParams params) { this.params = params; }
     private int magazine;
     public int getMagazine() { return magazine; }
     public void setMagazine(int magazine) { this.magazine = magazine; }
@@ -28,7 +28,7 @@ public class Weapon {
     public Integer getLastFireTick() { return lastFireTick; }
     public void setLastFireTick(Integer lastFireTick) { this.lastFireTick = lastFireTick; }
     public Weapon() {}
-    public Weapon(WeaponType typ, WeaponParams params, int magazine, boolean wasShooting, double spread, Double fireTimer, Double lastAngle, Integer lastFireTick) {
+    public Weapon(model.WeaponType typ, model.WeaponParams params, int magazine, boolean wasShooting, double spread, Double fireTimer, Double lastAngle, Integer lastFireTick) {
         this.typ = typ;
         this.params = params;
         this.magazine = magazine;
@@ -42,18 +42,18 @@ public class Weapon {
         Weapon result = new Weapon();
         switch (StreamUtil.readInt(stream)) {
         case 0:
-            result.typ = WeaponType.PISTOL;
+            result.typ = model.WeaponType.PISTOL;
             break;
         case 1:
-            result.typ = WeaponType.ASSAULT_RIFLE;
+            result.typ = model.WeaponType.ASSAULT_RIFLE;
             break;
         case 2:
-            result.typ = WeaponType.ROCKET_LAUNCHER;
+            result.typ = model.WeaponType.ROCKET_LAUNCHER;
             break;
         default:
             throw new java.io.IOException("Unexpected discriminant value");
         }
-        result.params = WeaponParams.readFrom(stream);
+        result.params = model.WeaponParams.readFrom(stream);
         result.magazine = StreamUtil.readInt(stream);
         result.wasShooting = StreamUtil.readBoolean(stream);
         result.spread = StreamUtil.readDouble(stream);

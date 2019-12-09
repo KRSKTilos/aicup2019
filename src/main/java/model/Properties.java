@@ -15,12 +15,12 @@ public class Properties {
     private int updatesPerTick;
     public int getUpdatesPerTick() { return updatesPerTick; }
     public void setUpdatesPerTick(int updatesPerTick) { this.updatesPerTick = updatesPerTick; }
-    private Vec2Double lootBoxSize;
-    public Vec2Double getLootBoxSize() { return lootBoxSize; }
-    public void setLootBoxSize(Vec2Double lootBoxSize) { this.lootBoxSize = lootBoxSize; }
-    private Vec2Double unitSize;
-    public Vec2Double getUnitSize() { return unitSize; }
-    public void setUnitSize(Vec2Double unitSize) { this.unitSize = unitSize; }
+    private model.Vec2Double lootBoxSize;
+    public model.Vec2Double getLootBoxSize() { return lootBoxSize; }
+    public void setLootBoxSize(model.Vec2Double lootBoxSize) { this.lootBoxSize = lootBoxSize; }
+    private model.Vec2Double unitSize;
+    public model.Vec2Double getUnitSize() { return unitSize; }
+    public void setUnitSize(model.Vec2Double unitSize) { this.unitSize = unitSize; }
     private double unitMaxHorizontalSpeed;
     public double getUnitMaxHorizontalSpeed() { return unitMaxHorizontalSpeed; }
     public void setUnitMaxHorizontalSpeed(double unitMaxHorizontalSpeed) { this.unitMaxHorizontalSpeed = unitMaxHorizontalSpeed; }
@@ -45,15 +45,15 @@ public class Properties {
     private int healthPackHealth;
     public int getHealthPackHealth() { return healthPackHealth; }
     public void setHealthPackHealth(int healthPackHealth) { this.healthPackHealth = healthPackHealth; }
-    private java.util.Map<WeaponType, WeaponParams> weaponParams;
-    public java.util.Map<WeaponType, WeaponParams> getWeaponParams() { return weaponParams; }
-    public void setWeaponParams(java.util.Map<WeaponType, WeaponParams> weaponParams) { this.weaponParams = weaponParams; }
-    private Vec2Double mineSize;
-    public Vec2Double getMineSize() { return mineSize; }
-    public void setMineSize(Vec2Double mineSize) { this.mineSize = mineSize; }
-    private ExplosionParams mineExplosionParams;
-    public ExplosionParams getMineExplosionParams() { return mineExplosionParams; }
-    public void setMineExplosionParams(ExplosionParams mineExplosionParams) { this.mineExplosionParams = mineExplosionParams; }
+    private java.util.Map<model.WeaponType, model.WeaponParams> weaponParams;
+    public java.util.Map<model.WeaponType, model.WeaponParams> getWeaponParams() { return weaponParams; }
+    public void setWeaponParams(java.util.Map<model.WeaponType, model.WeaponParams> weaponParams) { this.weaponParams = weaponParams; }
+    private model.Vec2Double mineSize;
+    public model.Vec2Double getMineSize() { return mineSize; }
+    public void setMineSize(model.Vec2Double mineSize) { this.mineSize = mineSize; }
+    private model.ExplosionParams mineExplosionParams;
+    public model.ExplosionParams getMineExplosionParams() { return mineExplosionParams; }
+    public void setMineExplosionParams(model.ExplosionParams mineExplosionParams) { this.mineExplosionParams = mineExplosionParams; }
     private double minePrepareTime;
     public double getMinePrepareTime() { return minePrepareTime; }
     public void setMinePrepareTime(double minePrepareTime) { this.minePrepareTime = minePrepareTime; }
@@ -67,7 +67,7 @@ public class Properties {
     public int getKillScore() { return killScore; }
     public void setKillScore(int killScore) { this.killScore = killScore; }
     public Properties() {}
-    public Properties(int maxTickCount, int teamSize, double ticksPerSecond, int updatesPerTick, Vec2Double lootBoxSize, Vec2Double unitSize, double unitMaxHorizontalSpeed, double unitFallSpeed, double unitJumpTime, double unitJumpSpeed, double jumpPadJumpTime, double jumpPadJumpSpeed, int unitMaxHealth, int healthPackHealth, java.util.Map<WeaponType, WeaponParams> weaponParams, Vec2Double mineSize, ExplosionParams mineExplosionParams, double minePrepareTime, double mineTriggerTime, double mineTriggerRadius, int killScore) {
+    public Properties(int maxTickCount, int teamSize, double ticksPerSecond, int updatesPerTick, model.Vec2Double lootBoxSize, model.Vec2Double unitSize, double unitMaxHorizontalSpeed, double unitFallSpeed, double unitJumpTime, double unitJumpSpeed, double jumpPadJumpTime, double jumpPadJumpSpeed, int unitMaxHealth, int healthPackHealth, java.util.Map<model.WeaponType, model.WeaponParams> weaponParams, model.Vec2Double mineSize, model.ExplosionParams mineExplosionParams, double minePrepareTime, double mineTriggerTime, double mineTriggerRadius, int killScore) {
         this.maxTickCount = maxTickCount;
         this.teamSize = teamSize;
         this.ticksPerSecond = ticksPerSecond;
@@ -96,8 +96,8 @@ public class Properties {
         result.teamSize = StreamUtil.readInt(stream);
         result.ticksPerSecond = StreamUtil.readDouble(stream);
         result.updatesPerTick = StreamUtil.readInt(stream);
-        result.lootBoxSize = Vec2Double.readFrom(stream);
-        result.unitSize = Vec2Double.readFrom(stream);
+        result.lootBoxSize = model.Vec2Double.readFrom(stream);
+        result.unitSize = model.Vec2Double.readFrom(stream);
         result.unitMaxHorizontalSpeed = StreamUtil.readDouble(stream);
         result.unitFallSpeed = StreamUtil.readDouble(stream);
         result.unitJumpTime = StreamUtil.readDouble(stream);
@@ -109,26 +109,26 @@ public class Properties {
         int weaponParamsSize = StreamUtil.readInt(stream);
         result.weaponParams = new java.util.HashMap<>(weaponParamsSize);
         for (int i = 0; i < weaponParamsSize; i++) {
-            WeaponType weaponParamsKey;
+            model.WeaponType weaponParamsKey;
             switch (StreamUtil.readInt(stream)) {
             case 0:
-                weaponParamsKey = WeaponType.PISTOL;
+                weaponParamsKey = model.WeaponType.PISTOL;
                 break;
             case 1:
-                weaponParamsKey = WeaponType.ASSAULT_RIFLE;
+                weaponParamsKey = model.WeaponType.ASSAULT_RIFLE;
                 break;
             case 2:
-                weaponParamsKey = WeaponType.ROCKET_LAUNCHER;
+                weaponParamsKey = model.WeaponType.ROCKET_LAUNCHER;
                 break;
             default:
                 throw new java.io.IOException("Unexpected discriminant value");
             }
-            WeaponParams weaponParamsValue;
-            weaponParamsValue = WeaponParams.readFrom(stream);
+            model.WeaponParams weaponParamsValue;
+            weaponParamsValue = model.WeaponParams.readFrom(stream);
             result.weaponParams.put(weaponParamsKey, weaponParamsValue);
         }
-        result.mineSize = Vec2Double.readFrom(stream);
-        result.mineExplosionParams = ExplosionParams.readFrom(stream);
+        result.mineSize = model.Vec2Double.readFrom(stream);
+        result.mineExplosionParams = model.ExplosionParams.readFrom(stream);
         result.minePrepareTime = StreamUtil.readDouble(stream);
         result.mineTriggerTime = StreamUtil.readDouble(stream);
         result.mineTriggerRadius = StreamUtil.readDouble(stream);
@@ -151,9 +151,9 @@ public class Properties {
         StreamUtil.writeInt(stream, unitMaxHealth);
         StreamUtil.writeInt(stream, healthPackHealth);
         StreamUtil.writeInt(stream, weaponParams.size());
-        for (java.util.Map.Entry<WeaponType, WeaponParams> weaponParamsEntry : weaponParams.entrySet()) {
-            WeaponType weaponParamsKey = weaponParamsEntry.getKey();
-            WeaponParams weaponParamsValue = weaponParamsEntry.getValue();
+        for (java.util.Map.Entry<model.WeaponType, model.WeaponParams> weaponParamsEntry : weaponParams.entrySet()) {
+            model.WeaponType weaponParamsKey = weaponParamsEntry.getKey();
+            model.WeaponParams weaponParamsValue = weaponParamsEntry.getValue();
             StreamUtil.writeInt(stream, weaponParamsKey.discriminant);
             weaponParamsValue.writeTo(stream);
         }

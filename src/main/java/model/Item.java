@@ -40,24 +40,24 @@ public abstract class Item {
 
     public static class Weapon extends Item {
         public static final int TAG = 1;
-        private WeaponType weaponType;
-        public WeaponType getWeaponType() { return weaponType; }
-        public void setWeaponType(WeaponType weaponType) { this.weaponType = weaponType; }
+        private model.WeaponType weaponType;
+        public model.WeaponType getWeaponType() { return weaponType; }
+        public void setWeaponType(model.WeaponType weaponType) { this.weaponType = weaponType; }
         public Weapon() {}
-        public Weapon(WeaponType weaponType) {
+        public Weapon(model.WeaponType weaponType) {
             this.weaponType = weaponType;
         }
         public static Weapon readFrom(java.io.InputStream stream) throws java.io.IOException {
             Weapon result = new Weapon();
             switch (StreamUtil.readInt(stream)) {
             case 0:
-                result.weaponType = WeaponType.PISTOL;
+                result.weaponType = model.WeaponType.PISTOL;
                 break;
             case 1:
-                result.weaponType = WeaponType.ASSAULT_RIFLE;
+                result.weaponType = model.WeaponType.ASSAULT_RIFLE;
                 break;
             case 2:
-                result.weaponType = WeaponType.ROCKET_LAUNCHER;
+                result.weaponType = model.WeaponType.ROCKET_LAUNCHER;
                 break;
             default:
                 throw new java.io.IOException("Unexpected discriminant value");
