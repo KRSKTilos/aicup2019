@@ -228,12 +228,13 @@ public class MyStrategy {
       if (bullet.getPlayerId() != unit.getPlayerId()) {
         double deltaX = bullet.getVelocity().getX()/game.getProperties().getTicksPerSecond();
         double deltaY = bullet.getVelocity().getY()/game.getProperties().getTicksPerSecond();
-        double ticksMultiply = 6;
+        int distanceToUnit = (int) distanceSqr(bullet.getPosition(), unit.getPosition());
+        distanceToUnit++;
         Vec2Double bulletPosition = new Vec2Double(
-                bullet.getPosition().getX()+(deltaX*ticksMultiply),
-                bullet.getPosition().getY()+(deltaY*ticksMultiply)
+                bullet.getPosition().getX()+(deltaX*distanceToUnit),
+                bullet.getPosition().getY()+(deltaY*distanceToUnit)
         );
-        FleeVector vector = fleeFromBulletsVector(game, unit, velocity, bullet.getPosition(), bulletPosition);
+        FleeVector vector = fleeFromBulletsVector(game, unit, velocity, bullet.getPosition(), bulletPosition, bullet);
         if (vector != null) {
           fleeVector = vector;
           /* set velocity */
@@ -402,9 +403,6 @@ public class MyStrategy {
   }
 
   private void checkDestinationExists(Game game) {
-    if (dest!=null) {
-      System.out.println("DEST x:" + dest.getPosition().getX() + " y:" + dest.getPosition().getY());
-    }
     if (dest != null) {
       boolean exists = false;
       for (LootBox lootBox : game.getLootBoxes()) {
@@ -523,57 +521,64 @@ public class MyStrategy {
   }
 
   private static FleeVector fleeFromBulletsVector(Game game, Unit unit, double unitVelocity,
-                                                  Vec2Double bPosStart, Vec2Double bPosStop) {
+                                                  Vec2Double bPosStart, Vec2Double bPosStop, Bullet bullet) {
     int distance = (int) distanceSqr(bPosStart, bPosStop);
+    int distanceToUnit = (int) distanceSqr(bPosStart, unit.getPosition());
     Vec2Double uPos = unit.getPosition();
     int tilesSize = game.getLevel().getTiles().length;
     int uX = (int) uPos.getX();
     Vec2Double uPosCenter = new Vec2Double(uPos.getX(), uPos.getY()+(unit.getSize().getY()/2d));
+    final double VELOCITY_RIGHT = (tilesSize-uX) * MAX_HORIZONTAL_SPEED;
+    final double VELOCITY_LEFT = (-uX) * MAX_HORIZONTAL_SPEED;
     for (int i=0; i<distance; i++) {
       Vec2Double point = pointAtVectorOnDistance(bPosStart, bPosStop, i);
-      double x = unit.getPosition().getX()-unit.getSize().getX()/2;
-      double y = unit.getPosition().getY();
-      if (x<point.getX() && point.getX()<unit.getPosition().getX()+unit.getSize().getX()
-              && y<point.getY() && point.getY()<unit.getPosition().getY()+unit.getSize().getY()) {
-        System.out.println("<< DANGER >> unitVelocity " + unitVelocity);
+      double bulletSize = bullet.getSize();
+      if (bullet.getWeaponType() == WeaponType.ROCKET_LAUNCHER) {
+        bulletSize = bullet.getExplosionParams().getRadius()*2;
+      }
+      boolean isCollision = isCollision(point, unit, bulletSize);
+      if (isCollision) {
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("#COLLISION# tick " + game.getCurrentTick() + " pX " + point.getX() + " pY " + point.getY() + " distance " + distance );
+        System.out.println("isCanJump " + unit.getJumpState().isCanJump() + "; isCanCancel " + unit.getJumpState().isCanCancel() + "; jumpSpeed " + unit.getJumpState().getSpeed());
+      }
+      if (isCollision) {
+        System.out.println("<< DANGER >> distanceToUnit " + distanceToUnit);
         if (bPosStart.getX()<uPos.getX() && bPosStop.getX()>uPos.getX()) {
           System.out.println(">> LEFT_TO_RIGHT >>");
           if (bPosStart.getY()<=uPosCenter.getY() && bPosStop.getY()<=uPosCenter.getY()) {
             System.out.println("hit in legs line");
-            /* jump up */
             if (unitVelocity == 0) {
-              /* jump up right */
-              return new FleeVector(true, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
-            } else return new FleeVector(true, unitVelocity);
+              System.out.println("jump_right");
+              return new FleeVector(true, VELOCITY_RIGHT);
+            } else {
+              System.out.println("jump");
+              return new FleeVector(true, unitVelocity);
+            }
           }
           if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
             System.out.println("hit in head line");
-            /* lay down */
             if (unit.getJumpState().isCanJump()) {
-              if (unitVelocity == 0) {
-                /* jump up right */
-                return new FleeVector(true, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
-              } else return new FleeVector(true, unitVelocity);
+              System.out.println("move_right");
+              return new FleeVector(false, VELOCITY_RIGHT);
+            } else {
+              System.out.println("lay_down_to_left");
+              return new FleeVector(false, VELOCITY_LEFT);
             }
-            if (unit.getJumpState().isCanCancel()) {
-              /* lay down to left */
-              return new FleeVector(false, (-uX) * MAX_HORIZONTAL_SPEED);
-            }
-            return new FleeVector(false, unitVelocity);
           }
           if (bPosStart.getY()<=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
             System.out.println("hit in legs out head");
-            /* jump left */
-            return new FleeVector(true, (-uX) * MAX_HORIZONTAL_SPEED);
+            System.out.println("jump_left");
+            return new FleeVector(true, VELOCITY_LEFT);
           }
           if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()<=uPosCenter.getY()) {
             System.out.println("hit in head out legs");
             if (unit.getJumpState().isCanJump()) {
-              /* jump right */
-              return new FleeVector(true, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
+              System.out.println("jump_right");
+              return new FleeVector(true, VELOCITY_RIGHT);
             } else {
-              /* lay down left */
-              return new FleeVector(false, (-uX) * MAX_HORIZONTAL_SPEED);
+              System.out.println("lay_down_left");
+              return new FleeVector(false, VELOCITY_LEFT);
             }
           }
         }
@@ -581,50 +586,81 @@ public class MyStrategy {
           System.out.println("<< RIGHT_TO_LEFT <<");
           if (bPosStart.getY()<=uPosCenter.getY() && bPosStop.getY()<=uPosCenter.getY()) {
             System.out.println("hit in legs line");
-            /* jump */
+            System.out.println("jump");
             return new FleeVector(true, unitVelocity);
           }
           if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
             System.out.println("hit in head line");
-            /* lay down */
             if (unit.getJumpState().isCanJump()) {
-              return new FleeVector(true, unitVelocity);
+              System.out.println("move_left");
+              return new FleeVector(false, VELOCITY_LEFT);
+            } else {
+              System.out.println("lay_down_to_right");
+              return new FleeVector(false, VELOCITY_RIGHT);
             }
-            if (unit.getJumpState().isCanCancel()) {
-              /* lay down to right */
-              return new FleeVector(false, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
-            }
-            return new FleeVector(false, unitVelocity);
           }
           if (bPosStart.getY()<=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
             System.out.println("hit in legs out head");
-            /* jump right */
-            return new FleeVector(true, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
+            System.out.println("jump_right");
+            return new FleeVector(true, VELOCITY_RIGHT);
           }
           if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()<=uPosCenter.getY()) {
             System.out.println("hit in head out legs");
             if (unit.getJumpState().isCanJump()) {
-              /* jump left */
-              return new FleeVector(true, (-uX) * MAX_HORIZONTAL_SPEED);
+              System.out.println("jump_left");
+              return new FleeVector(true, VELOCITY_LEFT);
             } else {
-              /* lay down right */
-              return new FleeVector(false, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
+              System.out.println("lay_down_to_right");
+              return new FleeVector(false, VELOCITY_RIGHT);
             }
           }
         }
         if (bPosStart.getX()<=uPosCenter.getX() && bPosStop.getX()<=uPosCenter.getX()) {
           System.out.println("VERTICAL_LEFT");
-          /* jump right */
-          return new FleeVector(true, (tilesSize-uX) * MAX_HORIZONTAL_SPEED);
+          if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
+            System.out.println("hit in head quarter");
+            System.out.println("move_right");
+            return new FleeVector(false, VELOCITY_RIGHT);
+          }
+          System.out.println("jump_right");
+          return new FleeVector(true, VELOCITY_RIGHT);
         }
         if (bPosStart.getX()>=uPosCenter.getX() && bPosStop.getX()>=uPosCenter.getX()) {
           System.out.println("VERTICAL_RIGHT");
-          /* jump left */
-          return new FleeVector(true, (-uX) * MAX_HORIZONTAL_SPEED);
+          if (bPosStart.getY()>=uPosCenter.getY() && bPosStop.getY()>=uPosCenter.getY()) {
+            System.out.println("hit in head quarter");
+            System.out.println("move_left");
+            return new FleeVector(false, VELOCITY_LEFT);
+          }
+          System.out.println("jump_left");
+          return new FleeVector(true, VELOCITY_LEFT);
         }
       }
     }
     return null;
+  }
+
+  private static boolean isCollision(Vec2Double bulletPos, Unit unit, double bulletSize) {
+    double x1 = bulletPos.getX() - bulletSize/2;
+    double y1 = bulletPos.getY() - bulletSize/2;
+    double x2 = bulletPos.getX() + bulletSize/2;
+    double y2 = bulletPos.getY() + bulletSize/2;
+    double x3 = unit.getPosition().getX() - unit.getSize().getX()/2;
+    double y3 = unit.getPosition().getY();
+    double x4 = unit.getPosition().getX() + unit.getSize().getX()/2;
+    double y4 = unit.getPosition().getY() + unit.getSize().getY();
+    double left = Math.max(x1, x3);
+    double top = Math.max(y2, y4);
+    double right = Math.max(x2, x4);
+    double bottom = Math.max(y1, y3);
+
+    double width = right - left;
+    double height = top - bottom;
+
+    if (width<0 || height<0)
+      return false;
+
+    return true;
   }
 
   private static class FleeVector {
@@ -633,6 +669,15 @@ public class MyStrategy {
     FleeVector(boolean jump, double velocity) {
       this.jump = jump;
       this.velocity = velocity;
+    }
+  }
+
+  private static class HitBox {
+    public Vec2Double hitIn;
+    public Vec2Double hitOut;
+    public HitBox(Vec2Double hitIn, Vec2Double hitOut) {
+      this.hitIn = hitIn;
+      this.hitOut = hitOut;
     }
   }
 }
