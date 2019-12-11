@@ -3,7 +3,7 @@ import model.*;
 import java.util.*;
 
 public class MyStrategy {
-  private static final int FLEE_TICKS = 12;
+  private static final int FLEE_TICKS = 6;
   private static int MAX_SECONDS_AT_DEST = 2;
   private static WeaponType PERFECT_WEAPON_TYPE = WeaponType.PISTOL;
   private static WeaponType GOOD_WEAPON_TYPE = WeaponType.ASSAULT_RIFLE;
@@ -224,22 +224,24 @@ public class MyStrategy {
     }
 
     /* flee from bullets */
-    for (Bullet bullet : game.getBullets()) {
-      if (bullet.getPlayerId() != unit.getPlayerId()) {
-        double deltaX = bullet.getVelocity().getX()/game.getProperties().getTicksPerSecond();
-        double deltaY = bullet.getVelocity().getY()/game.getProperties().getTicksPerSecond();
-        int distanceToUnit = (int) distanceSqr(bullet.getPosition(), unit.getPosition());
-        distanceToUnit++;
-        Vec2Double bulletPosition = new Vec2Double(
-                bullet.getPosition().getX()+(deltaX*distanceToUnit),
-                bullet.getPosition().getY()+(deltaY*distanceToUnit)
-        );
-        FleeVector vector = fleeFromBulletsVector(game, unit, velocity, bullet.getPosition(), bulletPosition, bullet);
-        if (vector != null) {
-          fleeVector = vector;
-          /* set velocity */
-          fleeTicks = FLEE_TICKS;
-          break;
+    if (!findGoodWeapon && !findNearWeapon) {
+      for (Bullet bullet : game.getBullets()) {
+        if (bullet.getPlayerId() != unit.getPlayerId()) {
+          double deltaX = bullet.getVelocity().getX() / game.getProperties().getTicksPerSecond();
+          double deltaY = bullet.getVelocity().getY() / game.getProperties().getTicksPerSecond();
+          int distanceToUnit = (int) distanceSqr(bullet.getPosition(), unit.getPosition());
+          distanceToUnit++;
+          Vec2Double bulletPosition = new Vec2Double(
+                  bullet.getPosition().getX() + (deltaX * distanceToUnit),
+                  bullet.getPosition().getY() + (deltaY * distanceToUnit)
+          );
+          FleeVector vector = fleeFromBulletsVector(game, unit, velocity, bullet.getPosition(), bulletPosition, bullet);
+          if (vector != null) {
+            fleeVector = vector;
+            /* set velocity */
+            fleeTicks = FLEE_TICKS;
+            break;
+          }
         }
       }
     }
