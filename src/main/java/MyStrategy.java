@@ -224,7 +224,7 @@ public class MyStrategy {
     }
 
     /* flee from bullets */
-    if (!findGoodWeapon && !findNearWeapon) {
+    if (dest==null && !findGoodWeapon && !findNearWeapon) {
       for (Bullet bullet : game.getBullets()) {
         if (bullet.getPlayerId() != unit.getPlayerId()) {
           double deltaX = bullet.getVelocity().getX() / game.getProperties().getTicksPerSecond();
