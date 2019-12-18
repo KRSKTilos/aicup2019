@@ -26,7 +26,6 @@ public class MyStrategy {
     if (nextTick) {
       lastTick = game.getCurrentTick();
     }
-
     Person p = currentPerson();
 
     if (p.fleeTicks > 0) {
@@ -37,23 +36,15 @@ public class MyStrategy {
 
     int unitPlayers = 0;
     Unit unit2 = null;
-    System.out.println("unit x:" + unit.getPosition().getX() + " y:" + unit.getPosition().getY());
     for (Unit u : game.getUnits()) {
       if (unit.getPlayerId() == u.getPlayerId()) {
-        System.out.println("u x:" + u.getPosition().getX() + " y:" + u.getPosition().getY());
         unitPlayers++;
         if (unit.getPosition().getX()!=u.getPosition().getX()
                 || unit.getPosition().getY()!=u.getPosition().getY()) {
-          System.out.println("UNIT FRIEND DETECTED");
           unit2 = u;
         }
       }
     }
-    System.out.println("unitPlayers " + unitPlayers);
-    if (unit2 != null) {
-      System.out.println("unit2 x:" + unit2.getPosition().getX() + " y:" + unit2.getPosition().getY());
-    }
-    System.out.println("lastPos x:" + p.lastPosition.getX() + " y:" + p.lastPosition.getY());
 
     MAX_HORIZONTAL_SPEED = game.getProperties().getUnitMaxHorizontalSpeed();
     if (p.findGoodWeapon) {
@@ -159,7 +150,6 @@ public class MyStrategy {
     }
 
     if (enemy!=null && DRAW_DEBUG) {
-      //System.out.println("draw enemy");
       debug.draw(new CustomData.Rect(
               new Vec2Float((float) (enemy.getPosition().getX()-(enemy.getSize().getX()/2)), (float) enemy.getPosition().getY()),
               new Vec2Float((float) enemy.getSize().getX(), (float) enemy.getSize().getY()),
@@ -168,7 +158,6 @@ public class MyStrategy {
     }
 
     if (p.dest!=null && DRAW_DEBUG) {
-      //System.out.println("draw dest");
       debug.draw(new CustomData.Rect(
               new Vec2Float((float) (p.dest.getPosition().getX()-(p.dest.getSize().getX()/2)), (float) p.dest.getPosition().getY()),
               new Vec2Float((float) p.dest.getSize().getX(), (float) p.dest.getSize().getY()),
@@ -177,7 +166,6 @@ public class MyStrategy {
     }
 
     if (targetPos!=null && DRAW_DEBUG) {
-      //System.out.println("draw target");
       debug.draw(new CustomData.Rect(
               new Vec2Float((float) targetPos.getX(), (float) targetPos.getY()),
               new Vec2Float((float) 1, (float) 1),
@@ -241,6 +229,19 @@ public class MyStrategy {
       }
       /* to right */
       if (p.dest.getPosition().getX()>unit.getPosition().getX()
+              && (isJumpOnUnit(unit, enemy, false) || isJumpOnUnit(unit, unit2, false))) {
+        jump = true;
+      }
+    }
+
+    if (p.dest==null && enemy!=null && unit2!=null) {
+      /* to left */
+      if (targetPos.getX()<unit.getPosition().getX()
+              && (isJumpOnUnit(unit, enemy, true) || isJumpOnUnit(unit, unit2, true))) {
+        jump = true;
+      }
+      /* to right */
+      if (targetPos.getX()>unit.getPosition().getX()
               && (isJumpOnUnit(unit, enemy, false) || isJumpOnUnit(unit, unit2, false))) {
         jump = true;
       }
